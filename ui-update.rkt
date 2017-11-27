@@ -109,8 +109,8 @@
 
 ;ref is a function that takes in a
 ;List, n1, and n2
-;where n1 is a number that corresponds with the x-coordinates of the image
-;and n2 is a number that corresponds with the y-coordinates of the image
+;where n1 is a number that corresponds with the first position in the lists
+;and n2 is a number that corresponds with the second position in the lists
 ;These two numbers together hone into a single boolean in the WorldState List.
 ;List Number Number --> Boolean
 
@@ -119,9 +119,9 @@
 
 ;Rect-placer is a function that
 ;takes a WorldState, x, and y
-;where x is a number representing the x-coordinates
-;and y is a number representing the y-coordinates
-;This functions places rectangles if a certain position in the WorldState is #t
+;where x is a number representing the first position in the lists
+;and y is a number representing the second position in the lists
+;This functions places rectangles if the certain position in the WorldState is #t
 ;if it's #f, then the rectangle "disappears"
 ;WorldState Number Number --> Image
 (define (rect-placer ws x y)
@@ -155,7 +155,7 @@
                                                     (rect-placer ws (add1 x) y))]
     [else bg-image]
     ))
-;;The function which deals with different states of the world
+;;The to-draw function which deals with different states of the world
 ;World State --> Image
 (define (image1 ws)
   (place-image bot-border (/ BLANK-WIDTH 2) BLANK-HEIGHT
@@ -215,9 +215,10 @@
 
 
 ;x-LC is a function that
-;takes in a number
+;takes in a number and
+;returns a number for LC to use
 ;It will be used within the on-mouse functions,
-;so the number is the x-coordinate of the mouse
+;so the input number is the x-coordinate of the mouse
 ;Number (x-coor) --> Number
 (define (x-LC x)
   (cond
