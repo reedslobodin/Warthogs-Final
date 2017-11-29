@@ -225,31 +225,26 @@
 (check-expect (LC (list (list #f #t #f #t) (list #t #t #t #t)) 1 2) (list (list #f #f #f #t) (list #t #t #t #t)))
 (check-expect (LC (list (list #f #t #f #t) (list #t #t #t #t)) 2 4) (list (list #f #t #f #t) (list #t #t #t #f)))
 
-;x-LC is a function that
-;takes in a number
-;It will be used within the on-mouse functions,
-;so the number is the x-coordinate of the mouse
-;Number (x-coor) --> Number
-(define (x-LC x)
+;;abstraction for x-LC and y-LC
+;Number Number Number --> Number
+(define (LC-xy var n1 n2)
   (cond
-    [(<= x 150) 1]
-    [(< 150 x 1200) (ceiling (/ x 150))]
-    [else 9]
-    ))
+    [(<= var n1) 1]
+    [(< n1 var n2) (ceiling (/ var n1))]
+    [else 9]))
+
+;x-LC deals with the x-coordinates of the image
+;Number --> Number
+(define (x-LC x)
+  (LC-xy x 150 1200))
 (check-expect (x-LC 200) 2)
 (check-expect (x-LC 1500) 9)
 (check-expect (x-LC 129.0939) 1)
 
-;y-LC is a function that is
-;the same as x-LC,
-;except it deals with y-coordinates instead
-;Number (y-coor) --> Number
+;y-LC deals with the y-coordinates of the image
+;Number --> Number
 (define (y-LC y)
-  (cond
-    [(<= y 29) 1]
-    [(< 29 y 232) (ceiling (/ y 29))]
-    [else 9]
-    ))
+  (LC-xy y 29 232))
 (check-expect (y-LC 3) 1)
 (check-expect (y-LC 70) 3)
 (check-expect (y-LC 500) 9)
