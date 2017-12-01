@@ -8,22 +8,36 @@
 (require rsound)
 (define-struct ws [vol songpos playing? fam tempo note-list w9 timer1 timer2])
 
-;a World State is make-ws
-;where (make-ws) is (make-ws vol songpos playing? fam tempo note-list w9 timer1 timer2)
+; A WorldState is a make-ws or ws that will determine the state of our World MelodyMaker.
+; Our WorldState will be defined by a structure with many parts,
 
-;fill in other elements of the world-state
-;
-;
+; vol determines the volume of the current stream,
 
-;w9 takes in a list-of-booleans
+; songpos determines the position we are at in the stream of sounds
+
+; playing? is a boolean where #t means it is playing and #f means it is paused
+
+; fam is a structure including a name determined by a string and number that determines
+; the family of notes we are using for the MelodyMaker at the moment, and the number within
+; that family. The name is either one of main or vgame and numbers can vary.
+; Our list of family numbers is going to be: main 50 , vgame 50 , main 25 , vgame 25
+#;(define-struct famstruct (main50 vgame50 main25 vgame25))
+
+;wlist takes in a list-of-booleans
 ;where a list-of booleans is one of
 ; '()
 ; (cons Boolean list-of-booleans)
 ; (list (list Boolean list-of-booleans))
+; It will be a list of booleans, which will tell us which rectangles are on/off at the moment,
+; #t means the rectangle is showing. #f means it is not.
 
+; tempo determines the cuurent tempo of the stream on a scale of 1-9
+
+; and note-list is the list of midi-note-numbers that the function will run through 
 
 ;timer1 takes in a number from 0 to .49
 ;and timer2 takes in a number from .49 to .98
+
 ;--------------------------------------------------------------------------------------------------
 
 
@@ -50,6 +64,8 @@
 
 (define blank (rectangle BLANK-WIDTH BLANK-HEIGHT "solid" bg-color))
 (define SLIDER (rectangle 10 232 "solid" "gray"))
+(define DIRECTIONS (text "Try pressing the keys...\n - 1 through 9 to change the volume\n - Spacebar to mute or unmute\n - F to change the category of sounds\n
+(The changes might take some time)" 15 "black"))
 
 ;Drawn representation of 'silence'
 (define dot (circle 3 "solid" "gray"))
@@ -166,7 +182,8 @@
 ;;Takes in a world-state and returns an image. Used with to-draw
 ;World State --> Image
 (define (image1 ws)
-  (place-image bot-border (/ BLANK-WIDTH 2) BLANK-HEIGHT
+  (place-image DIRECTIONS (/ BLANK-WIDTH 2) 300
+  (place-image bot-border (/ BLANK-WIDTH 2) 250
   (place-image SLIDER (* (ws-timer1 ws) BLANK-WIDTH) (/ 232 2)
   (place-image SLIDER (* (ws-timer2 ws) BLANK-WIDTH) (/ 232 2)
   (place-image dividers 150 (/ BLANK-HEIGHT 2)
@@ -177,8 +194,9 @@
   (place-image dividers 750 (/ BLANK-HEIGHT 2)
   (place-image dividers 900 (/ BLANK-HEIGHT 2)
   (place-image dividers 1050 (/ BLANK-HEIGHT 2)
+  
   (rect-placer ws 1 1)
-  ))))))))))))
+  )))))))))))))
 
 
 ;;taken from sleepy-dj
@@ -421,6 +439,7 @@
             (make-ws (ws-vol ws) (ws-songpos ws) (ws-playing? ws) (togglefam ws)
                     (ws-tempo ws)
                     (ws-note-list ws) (ws-w9 ws) (ws-timer1 ws) (ws-timer2 ws))]
+    
           
 
 
@@ -432,7 +451,8 @@
 (ws-note-list ws) (ws-w9 ws) (ws-timer1 ws) (ws-timer2 ws))]
       [else (make-ws (ws-vol ws) (ws-songpos ws) #t (ws-fam ws) (ws-tempo ws)
 (ws-note-list ws) (ws-w9 ws) (ws-timer1 ws) (ws-timer2 ws))]
-      )]))
+      )]
+[else ws]))
 
 
 
