@@ -41,7 +41,12 @@
 (define-struct ws (vol songpos playing? fam tempo note-list
                    wlist timer1 timer2))
 
+; CHARSKIE
+; KINLOCH's
+; PART
 ; KEY-HANDLER
+
+; KEY HANDLER PART
 
 (define familylist (list "main" "vgame" "path"))
 
