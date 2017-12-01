@@ -30,13 +30,19 @@
 
 ; and note-list is the list of midi-note-numbers that the function will run through 
 
-; wlist is a list of 8 booleans that tells us which rectangles are on/off at the moment,
-; a #t representing the rectangle is showing and a #f representing the rectangle for that
-; column is not showing. The booleans will be in order for columns fleft to right, columns 1-8.
 
-; timer1 is used to help represent a position for the slider on the first group of four notes.
+;wlist takes in a list-of-booleans
+;where a list-of booleans is one of
+; '()
+; (cons Boolean list-of-booleans)
+; (list (list Boolean list-of-booleans))
+; It will be a list of booleans, which will tell us which rectangles are on/off at the moment,
+; #t means the rectangle is showing. #f means it is not.
 
-; timer2 is used to help represent a position for the 2nd slider for the second group of four notes.
+; timer1 is used to help represent a position for the slider on the first group of four notes (window 1).
+; timer1 takes in a number from 0 to 0.49
+; timer2 is used to help represent a position for the 2nd slider for the second group of four notes (window 2).
+; timer2 takes in a number from 0.49 to 0.98
 
 (define-struct ws (vol songpos playing? fam tempo note-list
                    wlist timer1 timer2))
@@ -249,24 +255,12 @@
                                             [else ws])])])]))
 ;;;UI
 
-(define-struct ws [vol songpos playing? fam tempo note-list w9 timer1 timer2])
+#;(define-struct ws [vol songpos playing? fam tempo note-list wlist timer1 timer2])
 
-;a World State is make-ws
-;where (make-ws) is (make-ws vol songpos playing? fam tempo note-list w9 timer1 timer2)
+[data definitions placed at top]
+[What I changed are some data definitions regarding the UI part, and changing my structure to be
+;consistent with Charskie's
 
-;fill in other elements of the world-state
-;
-;
-
-;w9 takes in a list-of-booleans
-;where a list-of booleans is one of
-; '()
-; (cons Boolean list-of-booleans)
-; (list (list Boolean list-of-booleans))
-
-
-;timer1 takes in a number from 0 to .49
-;and timer2 takes in a number from .49 to .98
 ;--------------------------------------------------------------------------------------------------
 
 
@@ -377,30 +371,30 @@
   (cond
     [(and (= x 8) (= y 9)) bg-image]
     [(= x 9) (rect-placer ws 1 (add1 y))]
-    [(not (ref (ws-w9 ws) x y)) (place-image dot (x-coor x) (y-coor y)
+    [(not (ref (ws-wlist ws) x y)) (place-image dot (x-coor x) (y-coor y)
                                              (rect-placer ws (add1 x) y))]
-    [(and (= y 1)(ref (ws-w9 ws) x y)) (place-image rect1 (x-coor x) (y-coor y)
+    [(and (= y 1)(ref (ws-wlist ws) x y)) (place-image rect1 (x-coor x) (y-coor y)
                                                     (rect-placer ws (add1 x) y))]
     
-    [(and (= y 2)(ref (ws-w9 ws) x y)) (place-image rect2 (x-coor x) (y-coor y)
+    [(and (= y 2)(ref (ws-wlist ws) x y)) (place-image rect2 (x-coor x) (y-coor y)
                                                     (rect-placer ws (add1 x) y))]
 
-    [(and (= y 3)(ref (ws-w9 ws) x y)) (place-image rect3 (x-coor x) (y-coor y)
+    [(and (= y 3)(ref (ws-wlist ws) x y)) (place-image rect3 (x-coor x) (y-coor y)
                                                     (rect-placer ws (add1 x) y))]
 
-    [(and (= y 4)(ref (ws-w9 ws) x y)) (place-image rect4 (x-coor x) (y-coor y)
+    [(and (= y 4)(ref (ws-wlist ws) x y)) (place-image rect4 (x-coor x) (y-coor y)
                                                     (rect-placer ws (add1 x) y))]
 
-    [(and (= y 5)(ref (ws-w9 ws) x y)) (place-image rect5 (x-coor x) (y-coor y)
+    [(and (= y 5)(ref (ws-wlist ws) x y)) (place-image rect5 (x-coor x) (y-coor y)
                                                     (rect-placer ws (add1 x) y))]
     
-    [(and (= y 6)(ref (ws-w9 ws) x y)) (place-image rect6 (x-coor x) (y-coor y)
+    [(and (= y 6)(ref (ws-wlist ws) x y)) (place-image rect6 (x-coor x) (y-coor y)
                                                     (rect-placer ws (add1 x) y))]
     
-    [(and (= y 7)(ref (ws-w9 ws) x y)) (place-image rect7 (x-coor x) (y-coor y)
+    [(and (= y 7)(ref (ws-wlist ws) x y)) (place-image rect7 (x-coor x) (y-coor y)
                                                     (rect-placer ws (add1 x) y))]
     
-    [(and (= y 8)(ref (ws-w9 ws) x y)) (place-image rect8 (x-coor x) (y-coor y)
+    [(and (= y 8)(ref (ws-wlist ws) x y)) (place-image rect8 (x-coor x) (y-coor y)
                                                     (rect-placer ws (add1 x) y))]
     [else bg-image]
     ))
@@ -426,7 +420,7 @@
 ;WorldState --> WorldState
 (define (slider ws)
   (make-ws (ws-vol ws) (ws-songpos ws) (ws-playing? ws) (ws-fam ws) (ws-tempo ws)
-            (ws-note-list ws) (ws-w9 ws)
+            (ws-note-list ws) (ws-wlist ws)
             (cond
                [(> (ws-timer1 ws) .49) 0]
                ;^makes it so the slider 'loops' once it reaches the end.
@@ -450,6 +444,7 @@
 ;;If you ever find the slider looping out of synch, try messing
 ;;with the 0.49. (I don't know why .49 is the way it is, but
 ;;trial and error led me to it.)
+;(if you do change the 0.49, make sure you edit the data definition at the top for the two timers)
 
 ;--------------------------------------------------------------------------------------------------
 
@@ -503,7 +498,7 @@
     (cond
       [(mouse=? "button-down" key)
        (make-ws (ws-vol ws) (ws-songpos ws) (ws-playing? ws) (ws-fam ws) (ws-tempo ws)
-                (ws-note-list ws) (LC (ws-w9 ws) (x-LC x) (y-LC y)) (ws-timer1 ws) (ws-timer2 ws))]
+                (ws-note-list ws) (LC (ws-list ws) (x-LC x) (y-LC y)) (ws-timer1 ws) (ws-timer2 ws))]
       [else ws]
       ))
 
@@ -514,11 +509,11 @@
     [on-tick slider 1/100]
     [to-draw image1]))
 ;--------------------------------------------------------------------------------------------------
-(define w9-Initial (list (list #t #f #f #f #f #f #f #f #f) (list #f #t #f #f #f #f #f #f #f) (list #f #f #t #f #f #f #f #f #f) (list #f #f #f #t #f #f #f #f #f)
+(define wlist-Initial (list (list #t #f #f #f #f #f #f #f #f) (list #f #t #f #f #f #f #f #f #f) (list #f #f #t #f #f #f #f #f #f) (list #f #f #f #t #f #f #f #f #f)
                          (list #f #f #f #f #t #f #f #f #f) (list #f #f #f #f #f #t #f #f #f) (list #f #f #f #f #f #f #t #f #f) (list #f #f #f #f #f #f #f #t #f)
                          (list #f #f #f #f #f #f #f #f #f)))
 
 (define INITIAL-STATE
-  (make-ws 1 2 3 4 5 6 w9-Initial 0 .49))
+  (make-ws 1 2 3 4 5 6 wlist-Initial 0 .49))
 
 (test INITIAL-STATE)
