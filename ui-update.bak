@@ -5,7 +5,6 @@
 ;FinalProject : Melody Maker
 
 (require racket/list)
-(require rsound)
 (define-struct ws [vol songpos playing? fam tempo note-list w9 timer1 timer2])
 
 ;a World State is make-ws
@@ -44,8 +43,7 @@
 
 ;;
 (define BLANK-WIDTH 1220)
-(define BLANK-HEIGHT 400)
-(define DIVIDER-HEIGHT 250)
+(define BLANK-HEIGHT 250)
 (define bg-color "white")
 
 (define blank (rectangle BLANK-WIDTH BLANK-HEIGHT "solid" bg-color))
@@ -56,7 +54,7 @@
 
 ;Exists purely for aesthetics
 (define dividers (rectangle 6 BLANK-HEIGHT "solid" bg-color))
-(define border (rectangle 4 DIVIDER-HEIGHT "solid" "black")) ;;divides the two windows
+(define border (rectangle 4 BLANK-HEIGHT "solid" "black")) ;;divides the two windows
 (define bot-border (rectangle BLANK-WIDTH 18 "solid" bg-color))
 
 ;--------------------------------------------------------------------------------------------------
@@ -120,7 +118,7 @@
 ;List Number Number --> Boolean
 (define (ref ws n1 n2)
     (list-ref (list-ref ws (sub1 n1)) (sub1 n2)))
-(check-expect (ref (list (list #f #f #t #t) (list #t #f #f #f)) 2 1) #t)
+(check-expect (ref (list (list #f #t #t #t) (list #t #f #f #f)) 2 1) #t)
 (check-expect (ref (list (list #f #t #t #t) (list #t #f #f #f)) 1 1) #f)
 
 ;Rect-placer is a function that
@@ -172,7 +170,7 @@
   (place-image dividers 150 (/ BLANK-HEIGHT 2)
   (place-image dividers 300 (/ BLANK-HEIGHT 2)
   (place-image dividers 450 (/ BLANK-HEIGHT 2)
-  (place-image border 600 (/ DIVIDER-HEIGHT 2)
+  (place-image border 600 (/ BLANK-HEIGHT 2)
   (place-image dividers 600 (/ BLANK-HEIGHT 2)
   (place-image dividers 750 (/ BLANK-HEIGHT 2)
   (place-image dividers 900 (/ BLANK-HEIGHT 2)
@@ -180,104 +178,30 @@
   (rect-placer ws 1 1)
   ))))))))))))
 
+;Draws the slider, includes the ability to loop. Used with on-tick
+;WorldState --> WorldState
+(define (slider ws)
+  (make-ws (ws-vol ws) (ws-songpos ws) (ws-playing? ws) (ws-fam ws) (ws-tempo ws)
+            (ws-note-list ws) (ws-w9 ws)
+            (cond
+               [(> (ws-timer1 ws) .49) 0]
+               ;^makes it so the slider 'loops' once it reaches the end.
+               [else   (+ TEMPO1 (ws-timer1 ws))]
+               )
+            ;^this is in the timer1 field of the structure
+            (cond
+              [(> (ws-timer2 ws) (* .49 2)) .49]
+              [else   (+ TEMPO2 (ws-timer2 ws))]
+              )))
 
-;;taken from sleepy-dj
-;; how long should each queued segment be, in seconds?
-(define PLAY-SECONDS 1/20)
-;;taken from sleepy-dj
-;; the longest lead time for which we'll queue the next sound
-(define (MAX-QUEUE-INTERVAL nl) (* 4 nl))
-
-
-(define pstream1 (make-pstream))
-(define pstream2 (make-pstream))
-
-;;taken from sleepy-dj
-;; .. in frames?
-(define PLAY-FRAMES (* PLAY-SECONDS FRAME-RATE))
-;determines whether to queue a new section if too close to the end
-;frame --> boolean
-;(define (end-frames song-frame)
-  ;(cond
-   ; [(< (+ song-frame PLAY-FRAMES) (rs-frames Ia)) (+ song-frame PLAY-FRAMES)]
-    ;R[else (- (rs-frames Ia) 1)]))
-;; taken from sleepy-dj and then modified to queue 8 pstreams
-;; queue up the next fragment
-;(define (queue-notes song-frame frame-to-play val)
-  ;(cond
-   ; [(< song-frame (- (rs-frames Ia) PLAY-FRAMES))
- ; (andqueue 1a (clip Ia song-frame (end-frames song-frame))frame-to-play val)]
-  ;  [else val]))
-(define note-length
-  15000 )
-
-
-
-;;cheesy bit of code to do two things with one function
-;;taken from sleep-dj
-(define (both a b) b)
-
-;what to do on every tick
-(define (ticker ws)
-  (both (set-volume ws)
-  (cond [(ws-playing? ws)
-(big-queue (ws-w9 ws) ws 0)]
-[else ws]
-        )))
-
-;queues all of the notes in the worldstate list      
-(define (big-queue lol ws counter)
-(cond [(empty? lol) ws]
-      [else (cond [(< counter 4)
-(both (note-queuer ws (bools-to-notes 0 (first lol)) counter pstream1 note-length 1) (big-queue (rest lol) ws (add1 counter)))]
-                
-                  [else (both (note-queuer ws (bools-to-notes 0 (first lol)) (- counter 4) pstream2 note-length 2) (big-queue (rest lol) ws (add1 counter)))])]))
-
-
-
-
-
-;returns list of midi note numbers based off of a list of booleans
-;list of booleans --> list of numbers
-   (define (bools-to-notes counter lob)
-     (cond [(empty? lob) '()]
-           [else (cond [(not (first lob)) (bools-to-notes (add1 counter) (rest lob))]
-                 [else (cons (bool-translator counter) (bools-to-notes (add1 counter) (rest lob)))])]))
-
-(check-expect (bools-to-notes 0 (list #t #f #f #f #f #f #f #f #f)) '(72))
-(check-expect (bools-to-notes 0 (list #t #f #f #f #f #t #f #f #f)) '(72 64))
-
-
-;returns a midi note number based off of the location of a boolean in a list of booleans
-;number --> number  
-  (define (bool-translator counter)
-  (cond [(= counter 0) 72]
-        [(= counter 1) 71]
-        [(= counter 2) 69]
-        [(= counter 3) 67]
-        [(= counter 4) 65]
-        [(= counter 5) 64]
-        [(= counter 6) 62]
-        [(= counter 7) 60]
-        [(= counter 8) 59]))
-
-;queues notes based on a list of notes and a note position
-;list-of-notes --> ws
- (define (note-queuer ws lon note-place pstream nl num)
-   (cond [(empty? lon) ws]
-         [else (andqueue pstream (note-maker ws (first lon) nl) 
-                         (cond [(= num 1)
-                                (+(+ (pstream-current-frame pstream) (* 4 nl)) (* note-place nl))]
-                               [else (+(+ (pstream-current-frame pstream) (* 4 nl)) (* note-place nl))])
-                         (note-queuer ws (rest lon) note-place pstream nl num))])) 
-   ;decides which type of rsound to make based on the current family value
-   ; ws midi number --> rsound
-   (define (note-maker ws midi nl)
-     (cond [(= (ws-fam ws) 1) (synth-note "vgame" 50 midi nl)]
-           [(= (ws-fam ws) 2) (synth-note "main" 50 midi nl)]
-           [(= (ws-fam ws) 3) (synth-note "vgame" 25 midi nl)]
-           [(= (ws-fam ws) 4) (synth-note "main" 25 midi nl)]))
-   
+(check-expect (slider (make-ws 1 2 3 4 5 6 7 .49 .60)) (make-ws 1 2 3 4 5 6 7 (+ TEMPO1 .49) (+ TEMPO2 .60)))
+(check-expect (slider (make-ws 1 2 3 4 5 6 7 .60 2)) (make-ws 1 2 3 4 5 6 7 0 .49))
+;The tempo of either window 1 or window 2
+"REPLACE LATER WITH TEMPO FUNCTION"
+;(the numbers are currently placeholders for the purpose of testing)
+(define TEMPO1 1/200)
+(define TEMPO2 1/500)
+"How to sync these tempos with pstreams?"
 
 ;;If you ever find the slider looping out of synch, try messing
 ;;with the 0.49. (I don't know why .49 is the way it is, but
@@ -340,116 +264,18 @@
       ))
 
 ;--------------------------------------------------------------------------------------------------
-;sets volumes of both pstreams based on the worldstate volume value
-(define (set-volume ws)
-  (both (pstream-set-volume! pstream1 (ws-vol ws))
-        (pstream-set-volume! pstream2 (ws-vol ws))))
-
-;rotates through the different family values
-(define (togglefam ws)
-  (cond [(= (ws-fam ws) 1) 2]
-        [(= (ws-fam ws) 2) 3]
-        [(= (ws-fam ws) 3) 4]
-        [(= (ws-fam ws) 4) 1]))
-
-
-(define (key-handler ws key)
-; PRESSING THE 1 KEY
-  (cond
-    [(key=? key "1")
-         (make-ws .1 (ws-songpos ws) (ws-playing? ws) (ws-fam ws)
-                   (ws-tempo ws)
-                    (ws-note-list ws) (ws-w9 ws) (ws-timer1 ws) (ws-timer2 ws))]
-    
-; PRESSING THE 2 KEY
-  
-    [(key=? key "2")
-         (make-ws .2 (ws-songpos ws) (ws-playing? ws) (ws-fam ws)
-                    (ws-tempo ws)
-                    (ws-note-list ws) (ws-w9 ws) (ws-timer1 ws) (ws-timer2 ws))]
-
-; PRESSING THE 3 KEY
-  
-    [(key=? key "3")
-         (make-ws .3 (ws-songpos ws) (ws-playing? ws) (ws-fam ws)
-                    (ws-tempo ws)
-                    (ws-note-list ws) (ws-w9 ws) (ws-timer1 ws) (ws-timer2 ws))]
-
-; PRESSING THE 4 KEY
-  
-    [(key=? key "4")
-         (make-ws .4 (ws-songpos ws) (ws-playing? ws) (ws-fam ws)
-                    (ws-tempo ws)
-                    (ws-note-list ws) (ws-w9 ws) (ws-timer1 ws) (ws-timer2 ws))]
-    
-; PRESSING THE 5 KEY
-  
-    [(key=? key "5")
-         (make-ws .5 (ws-songpos ws) (ws-playing? ws) (ws-fam ws)
-                    (ws-tempo ws)
-                    (ws-note-list ws) (ws-w9 ws) (ws-timer1 ws) (ws-timer2 ws))]
-
-; PRESSING THE 6 KEY
-  
-    [(key=? key "6")
-         (make-ws .6 (ws-songpos ws) (ws-playing? ws) (ws-fam ws)
-                    (ws-tempo ws)
-                    (ws-note-list ws) (ws-w9 ws) (ws-timer1 ws) (ws-timer2 ws))]
-
-; PRESSING THE 7 KEY
-  
-    [(key=? key "7")
-         (make-ws .7 (ws-songpos ws) (ws-playing? ws) (ws-fam ws)
-                    (ws-tempo ws)
-                    (ws-note-list ws) (ws-w9 ws) (ws-timer1 ws) (ws-timer2 ws))]
-
-; PRESSING THE 8 KEY
-  
-    [(key=? key "8")
-         (make-ws .8 (ws-songpos ws) (ws-playing? ws) (ws-fam ws)
-                   (ws-tempo ws)
-                    (ws-note-list ws) (ws-w9 ws) (ws-timer1 ws) (ws-timer2 ws))]
-
-; PRESSING THE 9 KEY
-  
-    [(key=? key "9")
-         (make-ws .9 (ws-songpos ws) (ws-playing? ws) (ws-fam ws)
-                    (ws-tempo ws)
-                    (ws-note-list ws) (ws-w9 ws) (ws-timer1 ws) (ws-timer2 ws))]
-    ;presssing the f key
-    [(key=? key "f")
-            (make-ws (ws-vol ws) (ws-songpos ws) (ws-playing? ws) (togglefam ws)
-                    (ws-tempo ws)
-                    (ws-note-list ws) (ws-w9 ws) (ws-timer1 ws) (ws-timer2 ws))]
-          
-
-
-
-;PRESSING SPACEBAR
-[(key=? key " ")
- (cond[(ws-playing? ws)
-(make-ws (ws-vol ws) (ws-songpos ws) #f (ws-fam ws) (ws-tempo ws)         
-(ws-note-list ws) (ws-w9 ws) (ws-timer1 ws) (ws-timer2 ws))]
-      [else (make-ws (ws-vol ws) (ws-songpos ws) #t (ws-fam ws) (ws-tempo ws)
-(ws-note-list ws) (ws-w9 ws) (ws-timer1 ws) (ws-timer2 ws))]
-      )]))
-
-
-
-
 (define (test ws)
   (big-bang ws
     [on-mouse mouse-test]
-    [on-tick ticker (/ (* 4 note-length) FRAME-RATE)]
-    [to-draw image1]
-    [on-key key-handler]))
+    [on-tick slider 1/100]
+    [to-draw image1]))
 ;--------------------------------------------------------------------------------------------------
 (define w9-Initial (list (list #t #f #f #f #f #f #f #f #f) (list #f #t #f #f #f #f #f #f #f) (list #f #f #t #f #f #f #f #f #f) (list #f #f #f #t #f #f #f #f #f)
                          (list #f #f #f #f #t #f #f #f #f) (list #f #f #f #f #f #t #f #f #f) (list #f #f #f #f #f #f #t #f #f) (list #f #f #f #f #f #f #f #t #f)
                          (list #f #f #f #f #f #f #f #f #f)))
 
 (define INITIAL-STATE
-  (make-ws 1 2 #t 1 .5 6 w9-Initial 0 0))
+  (make-ws 1 2 3 4 5 6 w9-Initial 0 .49))
 
 (test INITIAL-STATE)
 
