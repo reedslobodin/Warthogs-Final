@@ -76,7 +76,7 @@ ws
 
 
 (define (mousehandler ws x y event)
-<<<<<<< HEAD
+
 (cond [(string=? event "button-down") (note-changer ws (clicker-length x) (clicker-height y))]
       [else ws])
        
@@ -125,8 +125,7 @@ ws
            [(= (note-checker height) (first ws-note-list)) (cons 0 (rest ws-note-list))];turn note off
            [else (cons (note-checker height) (rest ws-note-list))])];turn note on
         [else (cons(first ws-note-list) (note-changer (rest ws-note-list) (sub1 grid)))]))
-=======
-(cond [(string=? event "button-down")]))
+(cond [(string=? event "button-down")])
        
 
   
@@ -142,7 +141,7 @@ ws
         
         
   
->>>>>>> 2502e8ccb3102f0d67c2a727298779958ef3b666
+
 
 
   
